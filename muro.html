@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEMIA - Red Familiar</title>
+    <style>
+        :root {
+            --bg-base: #f4f6f9;
+            --premium-gradiente: linear-gradient(135deg, #6366f1, #a855f7, #ec4899);
+            --azul-premium: #6366f1;
+            --azul-suave: #e0e7ff;
+            --blanco: #ffffff;
+            --texto-principal: #0f172a;
+            --texto-secundario: #64748b;
+            --borde-suave: #e2e8f0;
+            --sombra-fb: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+            --rojo-insta: #ef4444;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-base);
+            color: var(--texto-principal);
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        /* VISTA DE AUTENTICACIÓN (LOGIN/REGISTRO) */
+        .auth-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; box-sizing: border-box; }
+        .auth-card { background: var(--blanco); padding: 35px; border-radius: 20px; box-shadow: var(--sombra-fb); width: 100%; max-width: 400px; text-align: center; border: 1px solid var(--borde-suave); }
+        .auth-card h2 { font-size: 32px; font-weight: 900; letter-spacing: 2px; background: var(--premium-gradiente); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-transform: uppercase; margin-bottom: 25px; }
+        .auth-card input { width: 100%; padding: 12px 16px; margin-bottom: 14px; border: 1px solid var(--borde-suave); border-radius: 10px; box-sizing: border-box; font-size: 15px; background: #f8fafc; outline: none; }
+        .auth-card input:focus { border-color: var(--azul-premium); background: #fff; }
+        .btn-auth { width: 100%; padding: 14px; background: var(--premium-gradiente); color: white; border: none; border-radius: 10px; font-weight: 700; font-size: 16px; cursor: pointer; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); }
+        .auth-toggle { margin-top: 20px; font-size: 14px; color: var(--texto-secundario); cursor: pointer; }
+        .auth-toggle strong { color: var(--azul-premium); }
+
+        /* INTERFAZ PRINCIPAL DE LA PLATAFORMA (OCULTA POR DEFECTO) */
+        .app-plat { display: none; }
+
+        header {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--borde-suave);
+            padding: 14px 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--sombra-fb);
+        }
+
+        .logo-demia {
+            font-size: 28px;
+            font-weight: 900;
+            letter-spacing: 2px;
+            background: var(--premium-gradiente);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .avatar-menu-trigger {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid transparent;
+            background: var(--premium-gradiente) padding-box, var(--premium-gradiente) border-box;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        /* BARRA LATERAL DESLIZABLE (SIDEBAR) */
+        .sidebar-demia {
+            position: fixed;
+            top: 0;
+            right: -350px;
+            width: 320px;
+            height: 100vh;
+            background: var(--blanco);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            z-index: 200;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 30px 24px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .sidebar-demia.abierto { right: 0; }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            border-bottom: 1px solid var(--borde-suave);
+            padding-bottom: 16px;
+        }
+        .sidebar-header h3 { margin: 0; font-size: 18px; color: var(--texto-principal); }
+        .btn-cerrar-sidebar { font-size: 24px; cursor: pointer; color: var(--texto-secundario); }
+
+        .perfil-info-box { text-align: center; margin-bottom: 25px; }
+        .perfil-info-box img { width: 85px; height: 85px; border-radius: 50%; object-fit: cover; margin-bottom: 8px; border: 3px solid #e2e8f0; }
+        .perfil-info-box h4 { margin: 0; font-size: 17px; font-weight: 700; text-transform: capitalize; }
+        
+        .lbl-cambiar-avatar { display: inline-block; font-size: 11px; color: var(--azul-premium); font-weight: 700; cursor: pointer; margin-top: 4px; border: 1px solid var(--azul-premium); padding: 4px 10px; border-radius: 12px; }
+        #input-avatar-fisco { display: none; }
+
+        .seccion-interna-titulo { font-size: 11px; font-weight: 800; color: var(--texto-secundario); text-transform: uppercase; letter-spacing: 1px; margin: 24px 0 10px 0; }
+        
+        .btn-hermano-menu {
+            width: 100%; padding: 11px 14px; margin-bottom: 6px; background: #f8fafc; border: 1px solid var(--borde-suave);
+            border-radius: 8px; text-align: left; font-weight: 600; cursor: pointer; font-size: 14px; color: var(--texto-principal);
+        }
+        .btn-hermano-menu:hover { background: var(--azul-suave); color: var(--azul-premium); }
+
+        .form-subida-sidebar select, .form-subida-sidebar input { width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 6px; border: 1px solid var(--borde-suave); box-sizing: border-box; }
+        .btn-subir-album { width: 100%; padding: 10px; background: var(--azul-premium); color: white; border: none; border-radius: 6px; font-weight: 700; cursor: pointer; }
+        .btn-logout-sidebar { width: 100%; padding: 12px; background: #fef2f2; color: #ef4444; border: 1px solid #fee2e2; border-radius: 10px; font-weight: 700; cursor: pointer; margin-top: 24px; }
+
+        .btn-muro-global {
+            width: 100%; padding: 12px; background: var(--premium-gradiente); color: white; border: none; border-radius: 10px; font-weight: 800; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2); display: block; text-align: center; box-sizing: border-box;
+        }
+
+        /* LAYOUT PRINCIPAL Y CONTENIDO */
+        .layout-principal { max-width: 640px; margin: 30px auto; padding: 0 16px; }
+
+        .contenedor-album-visual { display: none; background: white; padding: 25px; border-radius: 16px; box-shadow: var(--sombra-fb); margin-bottom: 24px; border: 1px solid var(--borde-suave); }
+        .grid-fotos-album { display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 14px; margin-top: 16px; }
+        
+        .foto-album-wrapper { position: relative; border-radius: 8px; overflow: hidden; }
+        .foto-album-item { width: 100%; height: 135px; object-fit: cover; cursor: pointer; display: block; }
+        
+        .btn-compartir-desde-album {
+            position: absolute; bottom: 8px; right: 8px; background: rgba(15, 23, 42, 0.85); color: white; border: none; padding: 5px 9px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; opacity: 0; transition: opacity 0.2s ease; backdrop-filter: blur(4px);
+        }
+        .foto-album-wrapper:hover .btn-compartir-desde-album { opacity: 1; }
+
+        /* CAJA CREAR PUBLICACIÓN */
+        .crear-publicacion { background: var(--blanco); border-radius: 16px; padding: 20px; box-shadow: var(--sombra-fb); margin-bottom: 24px; border: 1px solid var(--borde-suave); }
+        .crear-publicacion textarea { width: 100%; height: 70px; border: none; resize: none; font-size: 16px; outline: none; font-family: inherit; }
+        .zona-subida-atractiva { border: 2px dashed #cbd5e1; padding: 14px; border-radius: 12px; text-align: center; background-color: #f8fafc; cursor: pointer; margin-bottom: 14px; }
+        .zona-subida-atractiva p { margin: 0; font-size: 13px; color: var(--texto-secundario); font-weight: 500; }
+        .zona-subida-atractiva input { display: none; }
+        .input-opciones { border-top: 1px solid var(--borde-suave); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; }
+        .select-tipo-post { padding: 8px 12px; border-radius: 8px; border: 1px solid var(--borde-suave); background-color: #f1f5f9; font-weight: 600; color: var(--texto-secundario); }
+        .btn-publicar { background: var(--premium-gradiente); color: var(--blanco); border: none; padding: 10px 28px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+        /* FILTROS */
+        .barra-filtros-muro { display: flex; gap: 8px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 4px; }
+        .btn-filtro-muro { background-color: var(--blanco); border: 1px solid var(--borde-suave); padding: 8px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; color: var(--texto-secundario); cursor: pointer; white-space: nowrap; }
+        .btn-filtro-muro.activo { background: var(--azul-premium); color: var(--blanco); border-color: var(--azul-premium); }
+
+        /* COMPONENTES DE PUBLICACIÓN (FEEDS) */
+        .post-card { background: var(--blanco); border-radius: 16px; box-shadow: var(--sombra-fb); margin-bottom: 24px; border: 1px solid var(--borde-suave); overflow: hidden; }
+        .post-header { display: flex; align-items: center; justify-content: space-between; padding: 16px; }
+        .post-header-perfil { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+        .post-header-perfil:hover h4 { color: var(--azul-premium); text-decoration: underline; }
+        .post-header img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+        .post-header h4 { margin: 0; font-size: 15px; font-weight: 700; text-transform: capitalize; }
+        
+        .btn-eliminar-post { background: none; border: none; color: var(--texto-secundario); cursor: pointer; font-size: 16px; padding: 4px 8px; border-radius: 6px; }
+        .btn-eliminar-post:hover { color: var(--rojo-insta); background: #fef2f2; }
+
+        .post-comentario { padding: 0 16px 14px 16px; font-size: 15px; line-height: 1.4; }
+        .post-media-contenedor { width: 100%; background-color: #0f172a; }
+        .post-media-contenedor img, .post-media-contenedor video { width: 100%; display: block; max-height: 480px; object-fit: contain; }
+        .post-nota-estilo { background: linear-gradient(135deg, #6366f1, #a855f7); color: white; padding: 40px 24px; text-align: center; font-size: 20px; font-weight: 700; }
+
+        .post-contadores { display: flex; justify-content: space-between; padding: 12px 16px; font-size: 13px; color: var(--texto-secundario); border-bottom: 1px solid var(--borde-suave); }
+        .post-acciones-botones { display: flex; padding: 4px; border-bottom: 1px solid var(--borde-suave); }
+        .btn-accion { background: none; border: none; padding: 10px; width: 50%; font-weight: 600; color: var(--texto-secundario); cursor: pointer; border-radius: 8px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-accion:hover { background-color: #f1f5f9; }
+        .btn-corazon.reaccionado { color: var(--rojo-insta); font-weight: 800; }
+
+        .seccion-comentarios { background-color: #f8fafc; padding: 14px 16px; }
+        .lista-comentarios { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .comentario-item { font-size: 13px; background-color: #e2e8f0; padding: 8px 12px; border-radius: 12px; display: inline-block; max-width: 90%; }
+        .comentario-item strong { color: var(--texto-principal); margin-right: 6px; text-transform: capitalize; }
+        
+        .input-comentario-grupo { display: flex; gap: 8px; }
+        .input-comentario-grupo input { flex: 1; padding: 10px 16px; border-radius: 20px; border: 1px solid var(--borde-suave); font-size: 13px; outline: none; }
+        .btn-enviar-comentario { background-color: var(--azul-premium); color: white; border: none; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(15, 23, 42, 0.95); z-index: 1000; justify-content: center; align-items: center; }
+        .modal.abierto { display: flex; }
+        .modal-contenido { max-width: 85%; max-height: 85vh; border-radius: 8px; }
+    </style>
+</head>
+<body>
+
+    <div id="vista-auth" class="auth-container">
+        <div class="auth-card">
+            <h2 id="auth-titulo">DEMIA</h2>
+            <input type="text" id="auth-usuario" placeholder="Nombre de usuario (Ej: angel, mari, david...)">
+            <input type="email" id="auth-correo" placeholder="Correo electrónico">
+            <input type="password" id="auth-clave" placeholder="Contraseña">
+            <button class="btn-auth" id="btn-ejecutar-auth" onclick="manejarAutenticacion()">Ingresar</button>
+            <p class="auth-toggle" id="btn-cambiar-modo" onclick="conmutarModoAuth()">¿No tienes cuenta? <strong>Regístrate aquí</strong></p>
+        </div>
+    </div>
+
+    <div id="vista-app" class="app-plat">
+        <header>
+            <div class="logo-demia" onclick="irAlInicioMuro()">DEMIA</div>
+            <img src="" id="trigger-avatar" class="avatar-menu-trigger" onclick="conmutarSidebar(true)" alt="Menu">
+        </header>
+
+        <div id="sidebar" class="sidebar-demia">
+            <div class="sidebar-header">
+                <h3>Menú Personal</h3>
+                <span class="btn-cerrar-sidebar" onclick="conmutarSidebar(false)">&times;</span>
+            </div>
+            
+            <button class="btn-muro-global" onclick="irAlInicioMuro()">🏠 Muro Semanal</button>
+
+            <div class="perfil-info-box" id="box-perfil-data"></div>
+
+            <div class="seccion-interna-titulo">Explorar Álbumes</div>
+            <div id="lista-hermanos-album">
+                <button class="btn-hermano-menu" onclick="abrirAlbumHermano('angel')">📁 Carpeta de Angel</button>
+                <button class="btn-hermano-menu" onclick="abrirAlbumHermano('mari')">📁 Carpeta de Mari</button>
+                <button class="btn-hermano-menu" onclick="abrirAlbumHermano('david')">📁 Carpeta de David</button>
+                <button class="btn-hermano-menu" onclick="abrirAlbumHermano('israel')">📁 Carpeta de Israel</button>
+                <button class="btn-hermano-menu" onclick="abrirAlbumHermano('elias')">📁 Carpeta de Elias</button>
+            </div>
+
+            <div class="seccion-interna-titulo">Subir a mi Álbum (De por vida)</div>
+            <div class="form-subida-sidebar">
+                <select id="subir-tipo-album">
+                    <option value="individual">Individual (Privado)</option>
+                    <option value="familiar">Familiar (Compartido)</option>
+                </select>
+                <input type="file" id="input-archivo-album" accept="image/*">
+                <button class="btn-subir-album" onclick="subirFotoAlbumNube()">Subir Imagen</button>
+            </div>
+
+            <button class="btn-logout-sidebar" onclick="logout()">Cerrar Sesión</button>
+        </div>
+
+        <div class="layout-principal">
+            <div id="modulo-album-vista" class="contenedor-album-visual">
+                <h3 id="titulo-album-abierto" style="margin: 0 0 14px 0; border-bottom: 1px solid var(--borde-suave); padding-bottom: 8px;">Álbum</h3>
+                <div class="grid-fotos-album" id="grid-fotos-visor"></div>
+            </div>
+
+            <div id="modulo-muro-vista">
+                <div class="crear-publicacion">
+                    <textarea id="post-texto" placeholder="¿Qué nota o archivo multimedia quieres compartir esta semana en DEMIA?"></textarea>
+                    <div class="zona-subida-atractiva" onclick="document.getElementById('post-archivo').click()">
+                        <p id="texto-dropzone">📷 Seleccionar Foto o Video</p>
+                        <input type="file" id="post-archivo" accept="image/*,video/*" onchange="actualizarNombreArchivo(this)">
+                    </div>
+                    <div class="input-opciones">
+                        <select id="post-formato" class="select-tipo-post">
+                            <option value="multimedia">Multimedia</option>
+                            <option value="nota">Nota de Texto</option>
+                        </select>
+                        <button class="btn-publicar" onclick="crearPublicacionNube()">Publicar</button>
+                    </div>
+                </div>
+
+                <div class="barra-filtros-muro">
+                    <button class="btn-filtro-muro activo" onclick="filtrarMuro('todos', this)">Todos</button>
+                    <button class="btn-filtro-muro" onclick="filtrarMuro('angel', this)">Angel</button>
+                    <button class="btn-filtro-muro" onclick="filtrarMuro('mari', this)">Mari</button>
+                    <button class="btn-filtro-muro" onclick="filtrarMuro('david', this)">David</button>
+                    <button class="btn-filtro-muro" onclick="filtrarMuro('israel', this)">Israel</button>
+                    <button class="btn-filtro-muro" onclick="filtrarMuro('elias', this)">Elias</button>
+                </div>
+
+                <div id="feed-social"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ventana-modal" class="modal" onclick="this.classList.remove('abierto')">
+        <img class="modal-contenido" id="imagen-maximizada">
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+        // Tus llaves de conexión exactas
+        const firebaseConfig = {
+            apiKey: "AIzaSyABMNSOKZMsRVSBdogqhBDULQ2ArvyMr9A",
+            authDomain: "demia-f9708.firebaseapp.com",
+            projectId: "demia-f9708",
+            storageBucket: "demia-f9708.firebasestorage.app",
+            messagingSenderId: "1004088726819",
+            appId: "1:1004088726819:web:ba2132e526491577816896"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const storage = getStorage(app);
+
+        let usuarioActualGlobal = null;
+        let modoLogin = true;
+        let filtroUsuarioActual = "todos";
+
+        // MANEJO DE SESIONES EN TIEMPO REAL
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                usuarioActualGlobal = { email: user.email, nombre: user.displayName || user.email.split("@")[0] };
+                document.getElementById("vista-auth").style.display = "none";
+                document.getElementById("vista-app").style.display = "block";
+                await actualizarInterfazPerfil();
+                desplegarFeed();
+            } else {
+                usuarioActualGlobal = null;
+                document.getElementById("vista-app").style.display = "none";
+                document.getElementById("vista-auth").style.display = "flex";
+            }
+        });
+
+        window.conmutarModoAuth = function() {
+            modoLogin = !modoLogin;
+            document.getElementById("auth-titulo").innerText = modoLogin ? "DEMIA" : "REGISTRO DEMIA";
+            document.getElementById("auth-usuario").style.display = modoLogin ? "none" : "block";
+            document.getElementById("btn-ejecutar-auth").innerText = modoLogin ? "Ingresar" : "Crear Cuenta";
+            document.getElementById("btn-cambiar-modo").innerHTML = modoLogin ? "¿No tienes cuenta? <strong>Regístrate aquí</strong>" : "¿Ya tienes cuenta? <strong>Inicia sesión</strong>";
+        };
+
+        window.manejarAutenticacion = async function() {
+            const userText = document.getElementById("auth-usuario").value.trim().toLowerCase();
+            const email = document.getElementById("auth-correo").value.trim();
+            const clave = document.getElementById("auth-clave").value;
+
+            if(!email || !clave) return alert("Por favor rellena los campos principales.");
+
+            try {
+                if (modoLogin) {
+                    await signInWithEmailAndPassword(auth, email, clave);
+                } else {
+                    if(!userText) return alert("Escribe un nombre de usuario familiar para tu perfil.");
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, clave);
+                    userCredential.user.displayName = userText;
+                    await addDoc(collection(db, "avatares"), { usuario: userText, foto: "https://www.w3schools.com/howto/img_avatar.png" });
+                    alert("¡Cuenta familiar creada con éxito!");
+                    location.reload();
+                }
+            } catch (err) { alert("Error: " + err.message); }
+        };
+
+        window.logout = function() { signOut(auth); };
+
+        // SISTEMA DE AVATARES COMPARTIDOS EN LA NUBE
+        async function obtenerFotoPerfilReal(nombreUsuario) {
+            let url = "https://www.w3schools.com/howto/img_avatar.png";
+            const snap = await getDocs(collection(db, "avatares"));
+            snap.forEach(d => { if(d.data().usuario === nombreUsuario) url = d.data().foto; });
+            return url;
+        }
+
+        async function actualizarInterfazPerfil() {
+            const miFoto = await obtenerFotoPerfilReal(usuarioActualGlobal.nombre);
+            document.getElementById("trigger-avatar").src = miFoto;
+            document.getElementById("box-perfil-data").innerHTML = `
+                <img src="${miFoto}">
+                <h4>${usuarioActualGlobal.nombre}</h4>
+                <label class="lbl-cambiar-avatar" for="input-avatar-fisco">🔄 Cambiar mi Foto</label>
+                <input type="file" id="input-avatar-fisco" accept="image/*">
+            `;
+            document.getElementById("input-avatar-fisco").onchange = function() { procesarCambioAvatar(this); };
+        }
+
+        async function procesarCambioAvatar(input) {
+            const archivo = input.files[0]; if (!archivo) return;
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                comprimirImagen(e.target.result, async function(imgComp) {
+                    const snap = await getDocs(collection(db, "avatares"));
+                    let encontradoId = null;
+                    snap.forEach(d => { if(d.data().usuario === usuarioActualGlobal.nombre) encontradoId = d.id; });
+                    
+                    if(encontradoId) {
+                        await updateDoc(doc(db, "avatares", encontradoId), { foto: imgComp });
+                    } else {
+                        await addDoc(collection(db, "avatares"), { usuario: usuarioActualGlobal.nombre, foto: imgComp });
+                    }
+                    alert("Foto de perfil sincronizada.");
+                    actualizarInterfazPerfil();
+                    desplegarFeed();
+                });
+            };
+            lector.readAsDataURL(archivo);
+        }
+
+        // NAVEGACIÓN Y LOGICA DEL REPRODUCTOR
+        window.conmutarSidebar = function(abrir) {
+            const sidebar = document.getElementById("sidebar");
+            if(abrir) sidebar.classList.add("abierto");
+            else sidebar.classList.remove("abierto");
+        };
+
+        window.irAlInicioMuro = function() {
+            conmutarSidebar(false);
+            document.getElementById("modulo-album-vista").style.display = "none";
+            document.getElementById("modulo-muro-vista").style.display = "block";
+            desplegarFeed();
+        };
+
+        window.actualizarNombreArchivo = function(input) {
+            document.getElementById("texto-dropzone").innerText = input.files.length > 0 ? `✅ Seleccionado: ${input.files[0].name}` : "📷 Seleccionar Foto o Video";
+        };
+
+        window.filtrarMuro = function(usuario, boton) {
+            filtroUsuarioActual = usuario;
+            document.querySelectorAll('.btn-filtro-muro').forEach(b => b.classList.remove('activo'));
+            if(boton) boton.classList.add('activo');
+            desplegarFeed();
+        };
+
+        // RENDERIZADO DEL MURO SOCIAL SEMANAL CON FIRESTORE
+        window.desplegarFeed = async function() {
+            const feed = document.getElementById("feed-social");
+            feed.innerHTML = `<div style="text-align:center; color:#64748b; margin-top:20px;">Conectando con DEMIA Cloud...</div>`;
+            
+            try {
+                const q = query(collection(db, "posts"), orderBy("timestamp", "desc"));
+                const snap = await getDocs(q);
+                feed.innerHTML = "";
+
+                let contadorVivos = 0;
+                const tiempoLimiteSemana = 7 * 24 * 60 * 60 * 1000;
+                const ahoraMs = Date.now();
+
+                for (const d of snap.docs) {
+                    const post = d.data();
+                    post.id = d.id;
+
+                    if (ahoraMs - post.timestamp > tiempoLimiteSemana) continue;
+                    if (filtroUsuarioActual !== "todos" && post.userNombre !== filtroUsuarioActual) continue;
+
+                    contadorVivos++;
+                    const avatarActualizado = await obtenerFotoPerfilReal(post.userNombre);
+                    const totalLikes = post.likesLista?.length || 0;
+                    const yaReacciono = post.likesLista?.includes(usuarioActualGlobal.nombre);
+
+                    let mediaHTML = "";
+                    if (post.formato === "multimedia" && post.media) {
+                        if (post.mediaType?.startsWith("video")) {
+                            mediaHTML = `<div class="post-media-contenedor"><video src="${post.media}" controls></video></div>`;
+                        } else {
+                            mediaHTML = `<div class="post-media-contenedor"><img src="${post.media}"></div>`;
+                        }
+                    }
+
+                    let contenidoCentralHTML = post.formato === "nota" 
+                        ? `<div class="post-nota-estilo">${post.texto}</div>` 
+                        : `<div class="post-comentario">${post.texto}</div>${mediaHTML}`;
+
+                    let comentariosHTML = "";
+                    post.comentarios?.forEach(c => {
+                        comentariosHTML += `<div class="comentario-item"><strong>${c.autor}:</strong>${c.texto}</div>`;
+                    });
+
+                    let botonEliminarHTML = (post.userNombre === usuarioActualGlobal.nombre)
+                        ? `<button class="btn-eliminar-post" id="btn-del-${post.id}">🗑️</button>`
+                        : "";
+
+                    const card = document.createElement("div");
+                    card.className = "post-card";
+                    card.innerHTML = `
+                        <div class="post-header">
+                            <div class="post-header-perfil" id="header-perfil-${post.id}">
+                                <img src="${avatarActualizado}">
+                                <h4>${post.userNombre}</h4>
+                            </div>
+                            ${botonEliminarHTML}
+                        </div>
+                        ${contenidoCentralHTML}
+                        <div class="post-contadores">
+                            <span>❤️ ${totalLikes} Me gusta</span>
+                            <span>💬 ${post.comentarios?.length || 0} comentarios</span>
+                        </div>
+                        <div class="post-acciones-botones">
+                            <button class="btn-accion btn-corazon ${yaReacciono ? 'reaccionado' : ''}" id="btn-like-${post.id}">❤️ Me gusta</button>
+                            <button class="btn-accion" id="btn-foc-comment-${post.id}">💬 Comentar</button>
+                        </div>
+                        <div class="seccion-comentarios">
+                            <div class="lista-comentarios">${comentariosHTML}</div>
+                            <div class="input-comentario-grupo">
+                                <input type="text" id="input-c-${post.id}" placeholder="Escribe un comentario...">
+                                <button class="btn-enviar-comentario" id="btn-send-comment-${post.id}">Enviar</button>
+                            </div>
+                        </div>
+                    `;
+                    feed.appendChild(card);
+
+                    document.getElementById(`header-perfil-${post.id}`).onclick = () => { abrirAlbumHermano(post.userNombre); };
+                    if(post.userNombre === usuarioActualGlobal.nombre) {
+                        document.getElementById(`btn-del-${post.id}`).onclick = () => { eliminarPublicacion(post.id); };
+                    }
+                    document.getElementById(`btn-like-${post.id}`).onclick = () => { conmutarLike(post.id, post.likesLista || []); };
+                    document.getElementById(`btn-foc-comment-${post.id}`).onclick = () => { document.getElementById(`input-c-${post.id}`).focus(); };
+                    document.getElementById(`btn-send-comment-${post.id}`).onclick = () => { agregarComentario(post.id, post.comentarios || []); };
+                }
+
+                if(contadorVivos === 0) {
+                    feed.innerHTML = `<div style="text-align:center; color:#64748b; margin-top:40px;">Muro despejado esta semana. ¡Sé el primero en compartir algo!</div>`;
+                }
+            } catch(e) { feed.innerHTML = "Error de sincronización: " + e.message; }
+        };
+
+        window.eliminarPublicacion = async function(id) {
+            if(confirm("¿Borrar post de la base de datos?")) {
+                await deleteDoc(doc(db, "posts", id));
+                desplegarFeed();
+            }
+        };
+
+        window.conmutarLike = async function(id, listaVieja) {
+            let listaNueva = [...listaVieja];
+            const idx = listaNueva.indexOf(usuarioActualGlobal.nombre);
+            if(idx !== -1) listaNueva.splice(idx, 1);
+            else listaNueva.push(usuarioActualGlobal.nombre);
+            await updateDoc(doc(db, "posts", id), { likesLista: listaNueva });
+            desplegarFeed();
+        };
+
+        window.agregarComentario = async function(id, comentariosViejos) {
+            const input = document.getElementById(`input-c-${id}`);
+            if(!input.value.trim()) return;
+            let arrNuevo = [...comentariosViejos, { autor: usuarioActualGlobal.nombre, texto: input.value.trim() }];
+            await updateDoc(doc(db, "posts", id), { comentarios: arrNuevo });
+            input.value = "";
+            desplegarFeed();
+        };
+
+        window.crearPublicacionNube = async function() {
+            const texto = document.getElementById("post-texto").value.trim();
+            const archivo = document.getElementById("post-archivo").files[0];
+            const formato = document.getElementById("post-formato").value;
+
+            if(!texto && !archivo) return alert("Por favor escribe texto o sube un archivo.");
+
+            if (archivo && formato === "multimedia") {
+                const lector = new FileReader();
+                lector.onload = function(e) {
+                    comprimirImagen(e.target.result, async function(imgComp) {
+                        await addDoc(collection(db, "posts"), {
+                            userNombre: usuarioActualGlobal.nombre, texto: texto, media: imgComp,
+                            mediaType: archivo.type, formato: formato, timestamp: Date.now(),
+                            likesLista: [], comentarios: []
+                        });
+                        limpiarFormPost();
+                    });
+                };
+                lector.readAsDataURL(archivo);
+            } else {
+                await addDoc(collection(db, "posts"), {
+                    userNombre: usuarioActualGlobal.nombre, texto: texto, media: null,
+                    mediaType: null, formato: formato, timestamp: Date.now(),
+                    likesLista: [], comentarios: []
+                });
+                limpiarFormPost();
+            }
+        };
+
+        function limpiarFormPost() {
+            document.getElementById("post-texto").value = "";
+            document.getElementById("post-archivo").value = "";
+            document.getElementById("texto-dropzone").innerText = "📷 Seleccionar Foto o Video";
+            desplegarFeed();
+        }
+
+        // CONTROL DE ÁLBUMES INDIVIDUALES Y FAMILIARES PERPETUOS
+        window.abrirAlbumHermano = async function(hermanoSeleccionado) {
+            conmutarSidebar(false);
+            document.getElementById("modulo-muro-vista").style.display = "none";
+            const moduloAlbum = document.getElementById("modulo-album-vista");
+            moduloAlbum.style.display = "block";
+            document.getElementById("titulo-album-abierto").innerText = `Álbum perpetuo de ${hermanoSeleccionado.toUpperCase()}`;
+
+            let visorGrid = document.getElementById("grid-fotos-visor");
+            visorGrid.innerHTML = `<p style="color:var(--texto-secundario); font-size:14px;">Abriendo almacenamiento en la nube...</p>`;
+
+            try {
+                const snap = await getDocs(collection(db, "albumes"));
+                visorGrid.innerHTML = "";
+                let conteo = 0;
+
+                snap.forEach(d => {
+                    const f = d.data();
+                    if(f.hermano === hermanoSeleccionado) {
+                        if(usuarioActualGlobal.nombre !== hermanoSeleccionado && f.tipo === "individual") return;
+
+                        conteo++;
+                        const wrapper = document.createElement("div");
+                        wrapper.className = "foto-album-wrapper";
+                        
+                        let botonCompartirHTML = (usuarioActualGlobal.nombre === hermanoSeleccionado)
+                            ? `<button class="btn-compartir-desde-album" id="btn-comp-alb-${d.id}">📢 Compartir</button>`
+                            : "";
+
+                        wrapper.innerHTML = `
+                            <img src="${f.ruta}" class="foto-album-item" id="img-alb-${d.id}">
+                            ${botonCompartirHTML}
+                        `;
+                        visorGrid.appendChild(wrapper);
+
+                        document.getElementById(`img-alb-${d.id}`).onclick = () => { ampliarFoto(f.ruta); };
+                        if(usuarioActualGlobal.nombre === hermanoSeleccionado) {
+                            document.getElementById(`btn-comp-alb-${d.id}`).onclick = () => { publicarFotoDesdeAlbum(f.ruta); };
+                        }
+                    }
+                });
+
+                if(conteo === 0) {
+                    visorGrid.innerHTML = `<p style="color:var(--texto-secundario); font-size:14px; grid-column:1/-1;">Esta carpeta está vacía o protegida.</p>`;
+                }
+            } catch(e) { visorGrid.innerHTML = "Error al abrir álbum: " + e.message; }
+        };
+
+        window.publicarFotoDesdeAlbum = async function(base64Foto) {
+            await addDoc(collection(db, "posts"), {
+                userNombre: usuarioActualGlobal.nombre,
+                texto: "¡Compartiendo una foto directamente de mi álbum personal! 📂✨",
+                media: base64Foto, mediaType: "image/jpeg", formato: "multimedia",
+                timestamp: Date.now(), likesLista: [], comentarios: []
+            });
+            alert("¡Foto publicada con éxito en el muro semanal!");
+            irAlInicioMuro();
+        };
+
+        window.subirFotoAlbumNube = async function() {
+            const tipo = document.getElementById("subir-tipo-album").value;
+            const archivo = document.getElementById("input-archivo-album").files[0];
+            if (!archivo) return alert("Por favor selecciona una foto.");
+
+            const lector = new FileReader();
+            lector.onload = function(e) {
+                comprimirImagen(e.target.result, async function(imgComp) {
+                    await addDoc(collection(db, "albumes"), {
+                        hermano: usuarioActualGlobal.nombre, tipo: tipo, ruta: imgComp, creado: Date.now()
+                    });
+                    alert("¡Fotografía guardada con éxito de por vida!");
+                    document.getElementById("input-archivo-album").value = "";
+                    conmutarSidebar(false);
+                    abrirAlbumHermano(usuarioActualGlobal.nombre);
+                });
+            };
+            lector.readAsDataURL(archivo);
+        };
+
+        window.ampliarFoto = function(src) {
+            document.getElementById("imagen-maximizada").src = src;
+            document.getElementById("ventana-modal").classList.add("abierto");
+        };
+
+        function comprimirImagen(base64, callback) {
+            const img = new Image(); img.src = base64;
+            img.onload = function() {
+                const canvas = document.createElement("canvas");
+                const maxW = 600; let w = img.width; let h = img.height;
+                if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext("2d"); ctx.drawImage(img, 0, 0, w, h);
+                callback(canvas.toDataURL("image/jpeg", 0.5));
+            };
+        }
+    </script>
+</body>
+</html>
