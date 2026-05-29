@@ -1171,71 +1171,74 @@ header {
             };
         }
     </script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('DEMIA App operativa.'))
-      .catch((err) => console.log('Error de inicialización:', err));
-  }
-</script>
 <script type="module">
+  // 1. Importamos todo lo necesario (App básica y Mensajería)
+  import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-app.js";
   import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging.js";
 
-  const messaging = getMessaging();
+  // TUS CREDENCIALES REALES
+  const firebaseConfig = {
+      apiKey: "AIzaSyABMNSOKZMsRVSBdogqhBDULQ2ArvyMr9A",
+      authDomain: "demia-f9708.firebaseapp.com",
+      projectId: "demia-f9708",
+      storageBucket: "demia-f9708.firebasestorage.app",
+      messagingSenderId: "1004088726819",
+      appId: "1:1004088726819:web:ba2132e526491577816896"
+  };
 
-  // Función para suscribir el celular al grupo de la familia automáticamente
+  // 2. Inicializar Firebase aquí adentro para que no marque el error 'No Firebase App'
+  let app;
+  if (!getApps().length) {
+      app = initializeApp(firebaseConfig);
+  }
+
+  const messaging = getMessaging(app);
+
+  // Función para conectar el token al tema "familia"
   function suscribirDispositivoAlTema(tokenCelular) {
-      // Usamos el puente público de Firebase para meter este token al grupo 'familia'
       const urlSuscripcion = `https://iid.googleapis.com/iid/v1/${tokenCelular}/rel/topics/familia`;
       
       fetch(urlSuscripcion, {
           method: 'POST',
           headers: {
-              // Esta cabecera le avisa a Firebase que la petición es de tu app
               'Content-Type': 'application/json'
           }
       })
       .then(response => {
           if (response.ok) {
-              console.log("¡Éxito! Este celular ahora forma parte del grupo 'familia'.");
-          } else {
-              console.log("Aviso de suscripción procesado.");
+              console.log("¡Éxito! Celular conectado al canal 'familia'.");
           }
       })
-      .catch(error => console.error("Error al registrar el tema:", error));
+      .catch(error => console.error("Error al registrar tema:", error));
   }
 
   function solicitarPermisoNotificaciones() {
       Notification.requestPermission().then((permiso) => {
           if (permiso === 'granted') {
-              console.log('¡Permiso concedido por el usuario!');
+              console.log('¡Permiso de notificaciones concedido!');
               
-              // Obtenemos el Token único del celular usando tu clave VAPID real de la captura
               getToken(messaging, { 
                   vapidKey: 'BGvTy8ezO4jCJSPFbA5gcVDTz1EtWqTlsHfttazRdmFvjk-BCZlyWbK2D9CGb2Av8tEy-7H6i2DOIY-RanPc6Rs' 
               }).then((tokenActual) => {
                   if (tokenActual) {
-                      console.log("Token obtenido con éxito.");
-                      // Conectamos el teléfono al canal familiar
+                      console.log("Token obtenido:", tokenActual);
                       suscribirDispositivoAlTema(tokenActual);
                   }
               }).catch((error) => {
-                  console.error('Error al obtener el token del celular:', error);
+                  console.error('Error al obtener el token:', error);
               });
-          } else {
-              console.log('La persona rechazó los permisos de notificación.');
           }
       });
   }
 
-  // Registra el Service Worker de fondo
+  // 3. Registrar el Service Worker
   if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('./firebase-messaging-sw.js')
       .then((registro) => {
-          console.log('Service Worker registrado correctamente en el muro:', registro);
+          console.log('Service Worker activo en el muro:', registro);
           solicitarPermisoNotificaciones();
       }).catch((error) => {
-          console.error('Error al registrar el Service Worker:', error);
+          console.error('Error en Service Worker:', error);
       });
   }
 </script>
