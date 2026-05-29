@@ -14,7 +14,7 @@
             --bg-principal: #05070f;
             --bg-tarjeta: rgba(13, 20, 38, 0.55);
             --bg-input: rgba(21, 31, 50, 0.7);
-            --texto-principal: #f8fafc;
+          --texto-principal: #f8fafc;
             --texto-secundario: #94a3b8;
             --color-acento: #3b82f6;
             --color-morado: #a855f7;
@@ -163,7 +163,7 @@ header {
     text-transform: uppercase;
     cursor: pointer;
     /* Activación de la animación continua */
-    animation: coloresFluidos 6s ease infinite;
+    animation: coloresFluidos 4s ease infinite;
 }
 
 /* Definición de la animación para que los colores se muevan */
@@ -1176,6 +1176,67 @@ header {
     navigator.serviceWorker.register('./sw.js')
       .then(() => console.log('DEMIA App operativa.'))
       .catch((err) => console.log('Error de inicialización:', err));
+  }
+</script>
+<script type="module">
+  import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging.js";
+
+  const messaging = getMessaging();
+
+  // Función para suscribir el celular al grupo de la familia automáticamente
+  function suscribirDispositivoAlTema(tokenCelular) {
+      // Usamos el puente público de Firebase para meter este token al grupo 'familia'
+      const urlSuscripcion = `https://iid.googleapis.com/iid/v1/${tokenCelular}/rel/topics/familia`;
+      
+      fetch(urlSuscripcion, {
+          method: 'POST',
+          headers: {
+              // Esta cabecera le avisa a Firebase que la petición es de tu app
+              'Content-Type': 'application/json'
+          }
+      })
+      .then(response => {
+          if (response.ok) {
+              console.log("¡Éxito! Este celular ahora forma parte del grupo 'familia'.");
+          } else {
+              console.log("Aviso de suscripción procesado.");
+          }
+      })
+      .catch(error => console.error("Error al registrar el tema:", error));
+  }
+
+  function solicitarPermisoNotificaciones() {
+      Notification.requestPermission().then((permiso) => {
+          if (permiso === 'granted') {
+              console.log('¡Permiso concedido por el usuario!');
+              
+              // Obtenemos el Token único del celular usando tu clave VAPID real de la captura
+              getToken(messaging, { 
+                  vapidKey: 'BGvTy8ezO4jCJSPFbA5gcVDTz1EtWqTlsHfttazRdmFvjk-BCZlyWbK2D9CGb2Av8tEy-7H6i2DOIY-RanPc6Rs' 
+              }).then((tokenActual) => {
+                  if (tokenActual) {
+                      console.log("Token obtenido con éxito.");
+                      // Conectamos el teléfono al canal familiar
+                      suscribirDispositivoAlTema(tokenActual);
+                  }
+              }).catch((error) => {
+                  console.error('Error al obtener el token del celular:', error);
+              });
+          } else {
+              console.log('La persona rechazó los permisos de notificación.');
+          }
+      });
+  }
+
+  // Registra el Service Worker de fondo
+  if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./firebase-messaging-sw.js')
+      .then((registro) => {
+          console.log('Service Worker registrado correctamente en el muro:', registro);
+          solicitarPermisoNotificaciones();
+      }).catch((error) => {
+          console.error('Error al registrar el Service Worker:', error);
+      });
   }
 </script>
 </body>
